@@ -1,5 +1,11 @@
+// rather than pre-define a very large list of event handlers
+// let's just populate this as we go by recording which property names are paired
+// with values that are functions.
 const eventHandlers = []
 
+// this will be a list of "props" on dom nodes that we need to set directly as a property
+// on the element rather than through "setAttribute". We'll refer to this when diffing
+// props of the virtualNode against the domNode
 const domProperties = ['id', 'className', 'checked', 'value', 'innerText', 'innerHTML']
 
 function render (virtualNode, domNode, activeComponent) {
