@@ -1,0 +1,1 @@
+1. handling for "special" attributes
