@@ -1,5 +1,7 @@
 const eventHandlers = []
 
+const domProperties = ['id', 'className', 'checked', 'value', 'innerText', 'innerHTML']
+
 function render (virtualNode, domNode, activeComponent) {
   const {
     tagOrComponent,
@@ -55,16 +57,10 @@ function render (virtualNode, domNode, activeComponent) {
 
     // handle id and className as special cases, everything else
     // is just set attribute from here
-    switch (propName) {
-      case 'className':
-        domNode.className = propValue
-        return
-      case 'id':
-        domNode.id = propValue
-        return
-      case 'innerText':
-        domNode.innerText = propValue
-        return
+    switch (domProperties.includes(propName)) {
+      case true:
+        domNode[propName] = propValue
+        break
       default:
         domNode.setAttribute(propName, propValue)
     }
@@ -76,7 +72,7 @@ function render (virtualNode, domNode, activeComponent) {
     for (let i = 0; i < domNode.attributes.length; i++) {
       const { name: attrName, value: attrValue } = domNode.attributes[i]
 
-      // once again handle the special cases of id and class
+      // class- a pain in the ass
       if (attrName === 'class') {
         if (!props.className && domNode.className) {
           domNode.className = ''
@@ -84,9 +80,9 @@ function render (virtualNode, domNode, activeComponent) {
         }
       }
 
-      if (attrName === 'id') {
-        if (!props.id && domNode.id) {
-          domNode.id = ''
+      if (domProperties.includes(attrName)) {
+        if (!props[attrName] && domNode[attrName]) {
+          domNode[attrName] = undefined
           continue
         }
       }
@@ -109,44 +105,46 @@ function render (virtualNode, domNode, activeComponent) {
     let domSibling = domNode.childNodes[idx]
     const nextSibling = domNode.childNodes[idx + 1]
 
-    if (virtualChild) {
-      // first let's check if children has been "re-arranged"
-      // and if we can use the "key" optimization
-      let childMoved = false
-      if (virtualChild.props.key) {
-        // check if there's a key match
-        domSibling = [...domNode.childNodes].find((node, searchIdx) => {
-          const match = node.getAttribute('key') === virtualChild.props.key
-          if (match && idx !== searchIdx) {
-            childMoved = true
-          }
-          return match
-        }) || domSibling
-      }
+    if (!virtualChild) {
+      return
+    }
 
-      // handle child move using cached keyed dom node
-      if (childMoved) {
-        domNode.removeChild(domSibling)
-        // we need to re-compute this as the previous nextSibling
-        // could be the key-match which we have just removed
-        const newNextSibling = domNode.childNodes[idx + 1]
-        if (newNextSibling) {
-          domNode.insertBefore(domSibling, nextSibling)
-        } else {
-          domNode.appendChild(domSibling)
+    // first let's check if children has been "re-arranged"
+    // and if we can use the "key" optimization
+    let childMoved = false
+    if (virtualChild.props.key) {
+      // check if there's a key match
+      domSibling = [...domNode.childNodes].find((node, searchIdx) => {
+        const match = node.getAttribute('key') === virtualChild.props.key
+        if (match && idx !== searchIdx) {
+          childMoved = true
         }
-      }
+        return match
+      }) || domSibling
+    }
 
-      // handle no matching host node
-      if (!domSibling && virtualChild.tagOrComponent.constructor === String) {
-        domSibling = virtualChild.tagOrComponent === 'TEXT_NODE'
-          ? document.createTextNode(virtualChild.children[0])
-          : document.createElement(virtualChild.tagOrComponent)
-        if (nextSibling) {
-          domNode.insertBefore(domSibling, nextSibling)
-        } else {
-          domNode.appendChild(domSibling)
-        }
+    // handle child move using cached keyed dom node
+    if (childMoved) {
+      domNode.removeChild(domSibling)
+      // we need to re-compute this as the previous nextSibling
+      // could be the key-match which we have just removed
+      const newNextSibling = domNode.childNodes[idx + 1]
+      if (newNextSibling) {
+        domNode.insertBefore(domSibling, nextSibling)
+      } else {
+        domNode.appendChild(domSibling)
+      }
+    }
+
+    // handle no matching host node
+    if (!domSibling && virtualChild.tagOrComponent.constructor === String) {
+      domSibling = virtualChild.tagOrComponent === 'TEXT_NODE'
+        ? document.createTextNode(virtualChild.children[0])
+        : document.createElement(virtualChild.tagOrComponent)
+      if (nextSibling) {
+        domNode.insertBefore(domSibling, nextSibling)
+      } else {
+        domNode.appendChild(domSibling)
       }
     }
 
