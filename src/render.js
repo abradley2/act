@@ -21,6 +21,12 @@ function render (virtualNode, domNode, activeComponent) {
   // let's handle components!
   if (tagOrComponent.constructor === Function) {
     const componentNode = tagOrComponent(props, virtualNode)
+    if (!domNode) {
+      // we don't have a dom node and it's a component, we need to render and
+      // return the vdom of the component to the parent cycle of this render
+      // function so it can mount it
+      return componentNode
+    }
     render(componentNode, domNode, tagOrComponent)
     return
   }
@@ -156,7 +162,18 @@ function render (virtualNode, domNode, activeComponent) {
 
     // now that it is guaranteed to have found a real dom node sibling match
     // each virtual child node can go through it's own render
-    render(virtualChild, domSibling)
+    let result = render(virtualChild, domSibling)
+
+    while (result) {
+      if (result.tagOrComponent.constructor === String) {
+        const hostEl = document.createElement(result.tagOrComponent)
+        domNode.appendChild(hostEl)
+        render(result, hostEl, activeComponent)
+        result = undefined
+        continue
+      }
+      result = render(result, domSibling, activeComponent)
+    }
   })
 }
 

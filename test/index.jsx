@@ -7,20 +7,35 @@ const todos = [
   { id: Date.now().toString() + Math.random(), title: 'first todo' }
 ]
 
-// let count = 0
+let count = 0
 let newTodoTitle = ''
 
-// function Counter () {
-//   return <button onclick={() => {
-//     count = count + 1
-//   }}>
-//     {count}
-//   </button>
-// }
+function Bar () {
+  return <h3>
+    Nested top level components can be tricky!
+  </h3>
+}
+
+function Foo () {
+  return <Bar />
+}
+
+function Counter () {
+  return <button onclick={() => {
+    count = count + 1
+    redraw()
+  }}>
+    {count}
+  </button>
+}
 
 function App () {
   return <div id="appRoot" className="container">
     {/* A simple counter */}
+    <Counter label="Current count:" />
+
+    {/* A nested component */}
+    <Foo />
 
     {/* A TODO list */}
     <h3>{newTodoTitle}</h3>
