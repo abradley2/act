@@ -1,5 +1,5 @@
 /** @jsx createElement */
-import { createElement, render } from '../src'
+import { createElement, render, useState } from '../src'
 
 window.createElement = createElement
 
@@ -7,7 +7,6 @@ const todos = [
   { id: Date.now().toString() + Math.random(), title: 'first todo' }
 ]
 
-let count = 0
 let newTodoTitle = ''
 
 function Bar () {
@@ -21,10 +20,9 @@ function Foo () {
 }
 
 function Counter () {
-  return <button onclick={() => {
-    count = count + 1
-    redraw()
-  }}>
+  const [count, setCount] = useState(2)
+
+  return <button onclick={() => setCount(count + 1)}>
     {count}
   </button>
 }

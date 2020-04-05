@@ -1,3 +1,5 @@
+const hooks = require('./hooks')
+
 // rather than pre-define a very large list of event handlers
 // let's just populate this as we go by recording which property names are paired
 // with values that are functions.
@@ -7,6 +9,36 @@ const eventHandlers = []
 // on the element rather than through "setAttribute". We'll refer to this when diffing
 // props of the virtualNode against the domNode
 const domProperties = ['id', 'className', 'checked', 'value', 'innerText', 'innerHTML']
+
+function useState (initial) {
+  Object.assign(hooks.hooksCache(), {
+    state: initial
+  })
+
+  const virtualNode = hooks.activeComponentNode()
+
+  function setState (nextValue) {
+    hooks.activeComponentNode(virtualNode)
+
+    virtualNode.domNode.__hooksCache.state = nextValue
+    render(
+      virtualNode.tagOrComponent(virtualNode.props),
+      virtualNode.domNode,
+      virtualNode.tagOrComponent
+    )
+  }
+
+  if (virtualNode.domNode) {
+    return [
+      hooks.activeComponentNode().domNode.__hooksCache.state,
+      setState
+    ]
+  }
+  return [
+    initial,
+    setState
+  ]
+}
 
 function render (virtualNode, domNode, activeComponent) {
   const {
@@ -20,6 +52,12 @@ function render (virtualNode, domNode, activeComponent) {
 
   // let's handle components!
   if (tagOrComponent.constructor === Function) {
+    // check if we're at a new root component for our render tree
+    if (tagOrComponent !== (hooks.activeComponentNode() && hooks.activeComponentNode().tagOrComponent)) {
+      hooks.hooksCache({})
+      hooks.activeComponentNode(virtualNode)
+    }
+
     const componentNode = tagOrComponent(props, virtualNode)
     if (!domNode) {
       // we don't have a dom node and it's a component, we need to render and
@@ -167,14 +205,34 @@ function render (virtualNode, domNode, activeComponent) {
     while (result) {
       if (result.tagOrComponent.constructor === String) {
         const hostEl = document.createElement(result.tagOrComponent)
+        hostEl.__hooksCache = hooks.hooksCache()
+
+        Object.assign(
+          hooks.activeComponentNode(),
+          { domNode: hostEl }
+        )
+
         domNode.appendChild(hostEl)
         render(result, hostEl, activeComponent)
         result = undefined
         continue
       }
+
+      // we're at a new component in the heirarchy so we need to reset active component
+      hooks.activeComponentNode(undefined)
+      hooks.hooksCache({})
       result = render(result, domSibling, activeComponent)
     }
   })
+
+  hooks.activeComponentNode(undefined)
+  hooks.hooksCache({})
 }
 
-module.exports = render
+// we need to pass the render function to our hooks modules so hooks may invoke it
+hooks.render(render)
+
+module.exports = {
+  render,
+  useState
+}
