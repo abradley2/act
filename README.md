@@ -1,10 +1,20 @@
+(WIP- this isn't done yet. Hooks are hard)
+
 ## act.js
 
 _A React.js clone with a subset of the full API written in >500 lines of code_
 
-This was a fun experiment to see how small I can make a mini react-clone
-with only the methods in React that I actually like,
+## Included Methods
 
-It contains only a stand-in for `render`, `createElement`,
-`useContext`, `useReducer`, and
-`useEffect` with an additional `useReducerWithEffect` hook added.
+This contains only the minimal number of methods I thought fit for a "Minimum Viable"
+version of React. Included methods are:
+
+* `render`
+* `createElement`
+* `useState`
+* `useEffect`
+* `useContext`
+
+## API differences
+
+- There is no synthetic system. Do not needlessly camel case DOM methods. `onclick` is `onclick`
